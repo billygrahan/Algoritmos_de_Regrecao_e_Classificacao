@@ -3,7 +3,7 @@ Logistic Regression implementation.
 Regressão Logística - Algorithm for binary and multi-class classification.
 """
 
-import numpy as np
+import numpy as np  # Will be used when implementing the algorithm
 
 
 class LogisticRegression:

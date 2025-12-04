@@ -4,7 +4,6 @@ Uses scikit-learn datasets and returns them as pandas DataFrames.
 """
 
 import pandas as pd
-import numpy as np
 from sklearn.datasets import fetch_california_housing, load_breast_cancer as sk_load_breast_cancer
 
 

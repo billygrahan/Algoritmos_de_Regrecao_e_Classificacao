@@ -3,7 +3,7 @@ Linear Regression implementation.
 Regressão Linear - Algorithm for predicting continuous values.
 """
 
-import numpy as np
+import numpy as np  # Will be used when implementing the algorithm
 
 
 class LinearRegression:

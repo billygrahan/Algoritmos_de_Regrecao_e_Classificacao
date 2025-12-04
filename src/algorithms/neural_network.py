@@ -3,7 +3,7 @@ Neural Network implementation.
 Redes Neurais - Algorithm for deep learning and complex pattern recognition.
 """
 
-import numpy as np
+import numpy as np  # Will be used when implementing the algorithm
 
 
 class NeuralNetwork:

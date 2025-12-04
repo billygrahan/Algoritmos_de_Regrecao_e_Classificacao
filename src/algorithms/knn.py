@@ -3,7 +3,7 @@ K-Nearest Neighbors (KNN) implementation.
 KNN - Algorithm for classification and regression based on nearest neighbors.
 """
 
-import numpy as np
+import numpy as np  # Will be used when implementing the algorithm
 
 
 class KNN:
