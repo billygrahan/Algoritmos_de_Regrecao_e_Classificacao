@@ -1,13 +1,24 @@
 import sys
+import numpy as np
+
 sys.path.append('../Bases')
-sys.path.append('../KNN')
+sys.path.append('../Regrecao_Logistica')
 
 from Base_breast_cancer import data
-from Knn import knn
-# import random
+from RL import treinar, prever
 
-X = data.data.values.tolist()
-y = data.target.values.tolist()
+# IMPORTANTE: Converter para numpy array primeiro
+X = data.data.values
+y = data.target.values
+
+# NORMALIZAR OS DADOS (essencial para convergência!)
+media = X.mean(axis=0)
+desvio_padrao = X.std(axis=0)
+X = (X - media) / desvio_padrao
+
+# Converter para lista depois da normalização
+X = X.tolist()
+y = y.tolist()
 
 dados_combinados = list(zip(X, y))
 # random.seed(42)  # Para reprodutibilidade
@@ -32,10 +43,6 @@ print(f"Amostras de treino: {len(X_treino)}")
 print(f"Amostras de teste: {len(X_teste)}")
 print()
 
-# Testa com k=3
-k = 3
-print(f"Testando KNN com k={k}...")
-
 acertos = 0
 total_testes = len(X_teste)
 
@@ -45,8 +52,11 @@ TN = 0  # True Negative: previu 0 e era 0
 FP = 0  # False Positive: previu 1 mas era 0
 FN = 0  # False Negative: previu 0 mas era 1
 
+# Treinar com taxa de aprendizado maior (dados normalizados permitem isso)
+w, b = treinar(np.array(X_treino), np.array(y_treino), 0.1, 1000)
+
 for i, ponto_teste in enumerate(X_teste):
-    predicao = knn(X_treino, y_treino, ponto_teste, k)
+    predicao, probabilidade = prever(ponto_teste, w, b)
     real = y_teste[i]
     
     if predicao == real:
