@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
-# Obter o diretório do script atual
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(script_dir)
 
@@ -13,16 +12,11 @@ sys.path.append(os.path.join(project_root, 'KNN'))
 
 from Base_breast_cancer import data
 from Knn import knn
-# import random
 
 X = data.data.values.tolist()
 y = data.target.values.tolist()
 
 dados_combinados = list(zip(X, y))
-# random.seed(42)  # Para reprodutibilidade
-# random.shuffle(dados_combinados)
-
-# Separa novamente X e y
 X, y = zip(*dados_combinados)
 X = list(X)
 y = list(y)
