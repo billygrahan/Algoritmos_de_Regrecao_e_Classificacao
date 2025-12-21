@@ -39,7 +39,6 @@ class RedeNeural:
         # derivada do custo quadrático: 1/2 ||a - y||^2  -> (a - y)
         return output_activations - y
 
-    # ==================== Feedforward ====================
 
     def feedforward(self, a):
         """Propaga a entrada 'a' pela rede inteira."""
@@ -57,6 +56,7 @@ class RedeNeural:
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
 
+        # feedforward
         activation = x
         activations = [x]  # ativações de cada camada
         zs = []            # valores z = w.a + b em cada camada
