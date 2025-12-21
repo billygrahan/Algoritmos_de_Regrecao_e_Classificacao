@@ -2,13 +2,20 @@ import sys
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-
 sys.path.append('../Bases')
 sys.path.append('../RN-Backprop')
 
 from Base_breast_cancer import data
 from Rnb import RedeNeural
 
+def get_plot_dir():
+    """
+    Retorna o caminho da pasta Plots/Backpropagation (cria se não existir).
+    """
+    base_dir = os.path.dirname(__file__)
+    plot_dir = os.path.join(base_dir, '..', 'Plots', 'Backpropagation')
+    os.makedirs(plot_dir, exist_ok=True)
+    return plot_dir
 
 def get_plot_dir():
     """
@@ -26,7 +33,7 @@ def carregar_dados():
     e devolve X, y como numpy arrays normalizados.
     """
     X = data.data.to_numpy(dtype=float)
-    y = data.target.to_numpy(dtype=float)
+    y = data.target.to_numpy(dtype=float) 
 
     media = X.mean(axis=0)
     desvio = X.std(axis=0)
@@ -79,6 +86,7 @@ def avaliar_rede(rede: RedeNeural, X_teste, y_teste, limiar=0.5):
     recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
     f1 = 2 * precisao * recall / (precisao + recall) if (precisao + recall) > 0 else 0.0
 
+
     print("\nMatriz de confusão:")
     print(f"TN: {TN}  FP: {FP}")
     print(f"FN: {FN}  TP: {TP}\n")
@@ -88,6 +96,7 @@ def avaliar_rede(rede: RedeNeural, X_teste, y_teste, limiar=0.5):
     print(f"Recall:   {recall:.4f}")
     print(f"F1:       {f1:.4f}")
 
+    # ---------- GRÁFICO: MATRIZ DE CONFUSÃO ----------
     cm = np.array([[TN, FP],
                    [FN, TP]])
 
@@ -113,6 +122,7 @@ def avaliar_rede(rede: RedeNeural, X_teste, y_teste, limiar=0.5):
     plt.tight_layout()
     plt.savefig(os.path.join(plot_dir, "matriz_confusao.png"), dpi=300)
 
+    # ---------- GRÁFICO: MÉTRICAS (ACURÁCIA, PRECISÃO, RECALL, F1) ----------
     metricas = ["Acurácia", "Precisão", "Recall", "F1"]
     valores = [acuracia, precisao, recall, f1]
 
