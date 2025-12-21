@@ -17,10 +17,20 @@ def get_plot_dir():
     os.makedirs(plot_dir, exist_ok=True)
     return plot_dir
 
+def get_plot_dir():
+    """
+    Retorna o caminho da pasta Plots/Backpropagation (cria se não existir).
+    """
+    base_dir = os.path.dirname(__file__)
+    plot_dir = os.path.join(base_dir, '..', 'Plots', 'Backpropagation')
+    os.makedirs(plot_dir, exist_ok=True)
+    return plot_dir
+
+
 def carregar_dados():
     """
     Usa o objeto 'data' do sklearn (já carregado em Base_breast_cancer.py)
-    e devolve X, y como numpy arrays.
+    e devolve X, y como numpy arrays normalizados.
     """
     X = data.data.to_numpy(dtype=float)
     y = data.target.to_numpy(dtype=float) 
@@ -34,6 +44,11 @@ def carregar_dados():
 
 
 def dividir_treino_teste(X, y, proporcao_treino=0.8):
+    """
+    Embaralha os dados e separa:
+      - proporcao_treino (80%) para treino
+      - o resto (20%) para teste
+    """
     N = X.shape[0]
     idx = np.random.permutation(N)
     X = X[idx]
