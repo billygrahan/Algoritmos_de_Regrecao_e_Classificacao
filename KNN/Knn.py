@@ -3,8 +3,6 @@ import math
 def distancia_euclidiana(ponto1, ponto2):
     return math.sqrt(sum((a - b)**2 for a, b in zip(ponto1, ponto2)))
 
-# def mapeiamento_pontos
-
 def knn(treino, labels, ponto_teste, k):
     distancias = []
     for ponto in treino:

@@ -1,22 +1,37 @@
 import sys
 import os
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
 
+# Obter o diretório do script atual
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(script_dir)
 
 sys.path.append(os.path.join(project_root, 'Bases'))
-sys.path.append(os.path.join(project_root, 'KNN'))
+sys.path.append(os.path.join(project_root, 'Regrecao_Logistica'))
 
 from Base_breast_cancer import data
-from Knn import knn
+from RLog import treinar, prever
 
-X = data.data.values.tolist()
-y = data.target.values.tolist()
+# IMPORTANTE: Converter para numpy array primeiro
+X = data.data.values
+y = data.target.values
+
+# NORMALIZAR OS DADOS (essencial para convergência!)
+media = X.mean(axis=0)
+desvio_padrao = X.std(axis=0)
+X = (X - media) / desvio_padrao
+
+# Converter para lista depois da normalização
+X = X.tolist()
+y = y.tolist()
 
 dados_combinados = list(zip(X, y))
+# random.seed(42)  # Para reprodutibilidade
+# random.shuffle(dados_combinados)
+
+# Separa novamente X e y
 X, y = zip(*dados_combinados)
 X = list(X)
 y = list(y)
@@ -35,10 +50,6 @@ print(f"Amostras de treino: {len(X_treino)}")
 print(f"Amostras de teste: {len(X_teste)}")
 print()
 
-# Testa com k=3
-k = 15
-print(f"Testando KNN com k={k}...")
-
 acertos = 0
 total_testes = len(X_teste)
 
@@ -48,8 +59,11 @@ TN = 0  # True Negative: previu 0 e era 0
 FP = 0  # False Positive: previu 1 mas era 0
 FN = 0  # False Negative: previu 0 mas era 1
 
+# Treinar com taxa de aprendizado maior (dados normalizados permitem isso)
+w, b = treinar(np.array(X_treino), np.array(y_treino), 0.1, 1000)
+
 for i, ponto_teste in enumerate(X_teste):
-    predicao = knn(X_treino, y_treino, ponto_teste, k)
+    predicao, probabilidade = prever(ponto_teste, w, b)
     real = y_teste[i]
     
     if predicao == real:
@@ -97,11 +111,11 @@ print(f"F1-Score:             {f1_score:.4f} ({f1_score*100:.2f}%)")
 
 # ========== VISUALIZAÇÕES ==========
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-fig.suptitle(f'KNN (k={k}) - Análise de Desempenho', fontsize=16, fontweight='bold')
+fig.suptitle('Regressão Logística - Análise de Desempenho', fontsize=16, fontweight='bold')
 
 # Gráfico 1: Matriz de Confusão (Heatmap)
 matriz_confusao = np.array([[TN, FP], [FN, TP]])
-sns.heatmap(matriz_confusao, annot=True, fmt='d', cmap='Greens', cbar=False, ax=axes[0],
+sns.heatmap(matriz_confusao, annot=True, fmt='d', cmap='Blues', cbar=False, ax=axes[0],
             xticklabels=['Previsto 0', 'Previsto 1'],
             yticklabels=['Real 0', 'Real 1'])
 axes[0].set_title('Matriz de Confusão', fontsize=12, fontweight='bold')
@@ -128,6 +142,6 @@ for bar, valor in zip(bars, valores):
                 ha='center', va='bottom', fontsize=9, fontweight='bold')
 
 plt.tight_layout()
-# plt.savefig('resultados_knn.png', dpi=300, bbox_inches='tight')
-# print("\n✓ Gráfico salvo como 'resultados_knn.png'")
+# plt.savefig('resultados_regressao_logistica.png', dpi=300, bbox_inches='tight')
+# print("\n✓ Gráfico salvo como 'resultados_regressao_logistica.png'")
 plt.show()
