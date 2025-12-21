@@ -2,96 +2,133 @@ import numpy as np
 
 class RedeNeural:
     """
-    MLP bem simples:
-      - n_entradas
-      - 1 camada oculta com n_ocultos neurônios (sigmóide)
-      - 1 neurônio de saída (sigmóide)
+    MLP com:
+      - camada de entrada (n_entradas)
+      - 1 camada oculta (n_ocultos)
+      - 1 neurônio de saída
+
+    Implementação no estilo do livro Deep Learning Book,
+    Data Science Academy(https://www.datascienceacademy.com.br/),
+    com backpropagation e mini-batch SGD.
     """
 
     def __init__(self, n_entradas: int, n_ocultos: int, taxa_aprendizado: float = 0.1):
-        self.n_entradas = n_entradas
-        self.n_ocultos = n_ocultos
-        self.n_saidas = 1
+        self.sizes = [n_entradas, n_ocultos, 1]
+        self.num_layers = len(self.sizes)
         self.taxa_aprendizado = taxa_aprendizado
 
-        self.pesos_entrada_oculta = np.random.uniform(
-            -0.5, 0.5, size=(self.n_ocultos, self.n_entradas)
-        )
+        self.biases = [np.random.randn(y, 1) for y in self.sizes[1:]]
 
-        self.bias_oculta = np.random.uniform(-0.5, 0.5, size=(self.n_ocultos,))
-
-        self.pesos_oculta_saida = np.random.uniform(-0.5, 0.5, size=(self.n_ocultos,))
-
-        self.bias_saida = np.random.uniform(-0.5, 0.5)
-
-        self.ativ_oculta = np.zeros(self.n_ocultos)
-        self.ativ_saida = 0.0
+        self.weights = [
+            np.random.randn(y, x) * 0.1
+            for x, y in zip(self.sizes[:-1], self.sizes[1:])
+        ]
 
 
     @staticmethod
-    def sigmoide(x):
-        return 1.0 / (1.0 + np.exp(-x))
+    def sigmoide(z):
+        return 1.0 / (1.0 + np.exp(-z))
 
     @staticmethod
-    def derivada_sigmoide(y):
-        return y * (1.0 - y)
+    def sigmoide_prime(z):
+        s = 1.0 / (1.0 + np.exp(-z))
+        return s * (1.0 - s)
+
+    @staticmethod
+    def cost_derivative(output_activations, y):
+        # derivada do custo quadrático: 1/2 ||a - y||^2  -> (a - y)
+        return output_activations - y
+
+    # ==================== Feedforward ====================
+
+    def feedforward(self, a):
+        """Propaga a entrada 'a' pela rede inteira."""
+        for b, w in zip(self.biases, self.weights):
+            a = self.sigmoide(np.dot(w, a) + b)
+        return a
 
 
-    def forward(self, x: np.ndarray) -> float:
+    def backprop(self, x, y):
         """
-        x: vetor de entrada com shape (n_entradas,)
-        retorna: saída escalar (entre 0 e 1)
+        Retorna uma tupla (nabla_b, nabla_w) representando
+        o gradiente do custo C_x em relação a cada bias e peso.
+        nabla_b e nabla_w têm o mesmo formato que self.biases e self.weights.
         """
-        z_oculta = self.pesos_entrada_oculta @ x + self.bias_oculta
-        self.ativ_oculta = self.sigmoide(z_oculta)
+        nabla_b = [np.zeros(b.shape) for b in self.biases]
+        nabla_w = [np.zeros(w.shape) for w in self.weights]
 
-        z_saida = self.pesos_oculta_saida @ self.ativ_oculta + self.bias_saida
-        self.ativ_saida = self.sigmoide(z_saida)
+        activation = x
+        activations = [x]  # ativações de cada camada
+        zs = []            # valores z = w.a + b em cada camada
 
-        return float(self.ativ_saida)
+        for b, w in zip(self.biases, self.weights):
+            z = np.dot(w, activation) + b
+            zs.append(z)
+            activation = self.sigmoide(z)
+            activations.append(activation)
+
+        delta = self.cost_derivative(activations[-1], y) * self.sigmoide_prime(zs[-1])
+        nabla_b[-1] = delta
+        nabla_w[-1] = np.dot(delta, activations[-2].transpose())
+
+        for l in range(2, self.num_layers):
+            z = zs[-l]
+            sp = self.sigmoide_prime(z)
+            delta = np.dot(self.weights[-l + 1].transpose(), delta) * sp
+            nabla_b[-l] = delta
+            nabla_w[-l] = np.dot(delta, activations[-l - 1].transpose())
+
+        return nabla_b, nabla_w
 
 
-    def backpropagation(self, x: np.ndarray, alvo: float):
+    def update_mini_batch(self, mini_batch, eta):
         """
-        Executa forward + backpropagation para UM exemplo (x, alvo)
-        Atualiza os pesos in-place (gradient descent).
+        Atualiza pesos e biases aplicando o gradiente médio de um mini-batch.
+        mini_batch: lista de tuplas (x, y)
+        eta: taxa de aprendizado
         """
-        saida = self.forward(x)
+        nabla_b = [np.zeros(b.shape) for b in self.biases]
+        nabla_w = [np.zeros(w.shape) for w in self.weights]
 
-        erro_saida = saida - alvo
-        delta_saida = erro_saida * self.derivada_sigmoide(saida)
+        for x, y in mini_batch:
+            delta_nabla_b, delta_nabla_w = self.backprop(x, y)
+            nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
+            nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
 
-        grad_pesos_oculta_saida = delta_saida * self.ativ_oculta  
-        self.pesos_oculta_saida -= self.taxa_aprendizado * grad_pesos_oculta_saida
-
-        self.bias_saida -= self.taxa_aprendizado * delta_saida
-
-        erro_oculta = delta_saida * self.pesos_oculta_saida  
-        delta_oculta = erro_oculta * self.derivada_sigmoide(self.ativ_oculta)
-
-        grad_pesos_entrada_oculta = delta_oculta[:, np.newaxis] * x[np.newaxis, :]
-        self.pesos_entrada_oculta -= self.taxa_aprendizado * grad_pesos_entrada_oculta
-
-        self.bias_oculta -= self.taxa_aprendizado * delta_oculta
-
-        return 0.5 * (erro_saida ** 2)
+        m = len(mini_batch)
+        self.weights = [w - (eta / m) * nw for w, nw in zip(self.weights, nabla_w)]
+        self.biases = [b - (eta / m) * nb for b, nb in zip(self.biases, nabla_b)]
 
 
-    def treinar(self, X: np.ndarray, Y: np.ndarray, epocas: int = 1000):
+    def treinar(self, X: np.ndarray, Y: np.ndarray, epocas: int = 1000, mini_batch_size: int = 16):
         """
         X: matriz (N, n_entradas)
-        Y: vetor (N,) com alvos (0 ou 1, por exemplo)
-        Retorna uma lista com o erro médio em cada época.
+        Y: vetor (N,) com rótulos 0/1
+        Retorna lista com erro médio (MSE) por época.
         """
         N = X.shape[0]
+        dados = [
+            (X[i].reshape(-1, 1), np.array([[Y[i]]], dtype=float))
+            for i in range(N)
+        ]
+
         historico_erro = []
 
         for epoca in range(1, epocas + 1):
+            np.random.shuffle(dados)
+
+            mini_batches = [
+                dados[k:k + mini_batch_size]
+                for k in range(0, N, mini_batch_size)
+            ]
+
+            for mini_batch in mini_batches:
+                self.update_mini_batch(mini_batch, self.taxa_aprendizado)
+
             erro_total = 0.0
-            for i in range(N):
-                x = X[i]
-                y = Y[i]
-                erro_total += self.backpropagation(x, y)
+            for x, y in dados:
+                y_pred = self.feedforward(x)
+                erro_total += 0.5 * np.linalg.norm(y_pred - y) ** 2
 
             erro_medio = erro_total / N
             historico_erro.append(erro_medio)
@@ -104,7 +141,8 @@ class RedeNeural:
 
     def prever_proba(self, x: np.ndarray) -> float:
         """Retorna a probabilidade (saída da sigmóide)."""
-        return self.forward(x)
+        a = self.feedforward(x.reshape(-1, 1))
+        return float(a[0, 0])
 
     def prever_classe(self, x: np.ndarray, limiar: float = 0.5) -> int:
         """Converte a probabilidade em classe 0/1 usando um limiar."""
